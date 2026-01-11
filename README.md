@@ -6,6 +6,8 @@ The types of questions currently supported are:
 - Multiple Choice
 - Short Answer
 
+## How it works
+When you load a zybooks section, zybooks makes a get request to one of its APIs which contains every single question and answer on the page in a single JSON object. This program simply makes that get request for itself and filters out the answers from the JSON data.
 
 ## Compilation
 1. Make sure cargo and rust are installed, then clone this repository.

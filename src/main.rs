@@ -1,5 +1,4 @@
 use clap::Parser;
-use serde_json::Value;
 
 mod cli;
 mod zybooks;

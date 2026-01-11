@@ -1,5 +1,5 @@
 [package]
-name = "zybooks_auto_complete"
+name = "zyanswers"
 version = "0.2.1"
 edition = "2024"
 license = "GPL-3.0-or-later"

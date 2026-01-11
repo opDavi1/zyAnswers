@@ -27,14 +27,16 @@ pub fn get_zybooks_data(args: &cli::Cli) -> Result<Value, Box<dyn std::error::Er
         )*/
         .send()?;
     if args.verbose {
-        println!(
-            "Status: {}, {:#?}",
-            response.status(),
-            response.status().canonical_reason()
-        );
+        println!("Status: {}", response.status());
         println!("Response Headers: {:#?}", response.headers());
     }
-    let data = response.json()?;
+    let data: Value = response.json()?;
+    if let Some(err) = data.get("error") {
+        eprintln!("Error getting zyBooks data:");
+        eprintln!("{:#?}", err["message"].as_str().unwrap_or_default());
+        return Err("Could not get zyBooks data".into());
+    }
+
     Ok(data)
 }
 

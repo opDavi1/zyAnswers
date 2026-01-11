@@ -37,6 +37,10 @@ pub fn get_zybooks_data(args: &cli::Cli) -> Result<Value, Box<dyn std::error::Er
         return Err("Could not get zyBooks data".into());
     }
 
+    if args.very_verbose {
+        println!("Data: {:#?}", data);
+    }
+
     Ok(data)
 }
 

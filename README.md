@@ -33,7 +33,6 @@ $ zyanswers --auth-token <your token> --chapter <chapter> --section <section> --
 > [!CAUTION]
 > DO NOT GIVE ANYBODY YOUR AUTH TOKEN as it is essentially the same as giving them your zyBooks *username* **and** *password*.
 > This program only uses your token to send a GET request to `zyserver.zybooks.com` to access the specific chapter and section of your zybook that you requested.
-> See [Why no pre-compiled binaries?](#why-no-pre-compiled-binaries) for more information.
 
 ### On Firefox
 1. Go to zybooks.com, log-in, and inspect element.
@@ -48,8 +47,5 @@ $ zyanswers --auth-token <your token> --chapter <chapter> --section <section> --
 2. Navigate to the same cookie described in the Firefox section
 
 
-## Why no pre-compiled binaries?
-You should never trust random programs on the internet with your log-in tokens. It's always a good idea to check the source code and compile yourself to make sure the program does what you expect with your personal details.
-By forcing you to compile the program yourself, you're making sure that the binary you get actually came from the unmodified source code, without any malicious code added in.
-
-It's also just a pain in the ass to have to compile each version of the program for every major platform.
+## Binaries
+I only provide pre-compiled binaries for GNU/Linux distributions because I want Windows users to get a taste of having to compile programs while other platforms get binaries for free. I might change my mind in the future if this program gets advanced enough

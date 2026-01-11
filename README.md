@@ -31,7 +31,7 @@ $ zyanswers --auth-token <your token> --chapter <chapter> --section <section> --
 > [!CAUTION]
 > DO NOT GIVE ANYBODY YOUR AUTH TOKEN as it is essentially the same as giving them your zyBooks *username* **and** *password*.
 > This program only uses your token to send a GET request to `zyserver.zybooks.com` to access the specific chapter and section of your zybook that you requested.
-> See [Why no pre-compiled binaries?](#why-no-precompiled-binaries) for more information.
+> See [Why no pre-compiled binaries?](#why-no-pre-compiled-binaries) for more information.
 
 ### On Firefox
 1. Go to zybooks.com, log-in, and inspect element.

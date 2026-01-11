@@ -11,7 +11,9 @@ pub fn get_zybooks_data(args: &cli::Cli) -> Result<Value, Box<dyn std::error::Er
     );
 
     let client = Client::new();
-    println!("Sending request to server: {}", url);
+    if args.verbose {
+        println!("Sending request to server: {}", url);
+    }
     let response = client
         .get(url)
         .header("Accept", "application/json")
@@ -24,14 +26,42 @@ pub fn get_zybooks_data(args: &cli::Cli) -> Result<Value, Box<dyn std::error::Er
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0",
         )*/
         .send()?;
-    println!("Status: {}", response.status());
+    if args.verbose {
+        println!(
+            "Status: {}, {:#?}",
+            response.status(),
+            response.status().canonical_reason()
+        );
+        println!("Response Headers: {:#?}", response.headers());
+    }
     let data = response.json()?;
     Ok(data)
 }
 
-enum ActivityType<'a> {
-    MultipleChoice(&'a Value),
-    ShortAnswer(&'a Value),
+enum ActivityType {
+    MultipleChoice,
+    ShortAnswer,
+    Unknown,
+}
+
+impl ActivityType {
+    fn as_string(&self) -> &str {
+        match self {
+            ActivityType::MultipleChoice => "multiple_choice",
+            ActivityType::ShortAnswer => "short_answer",
+            _ => "unknown",
+        }
+    }
+}
+
+impl From<&str> for ActivityType {
+    fn from(value: &str) -> Self {
+        match value {
+            "multiple_choice" => ActivityType::MultipleChoice,
+            "short_answer" => ActivityType::ShortAnswer,
+            _ => ActivityType::Unknown,
+        }
+    }
 }
 
 pub struct QuestionParser {
@@ -44,28 +74,45 @@ impl QuestionParser {
     }
 
     pub fn print_answers(&self) {
-        let Some(activities) = self.get_multiple_choice_activities() else {
-            return;
-        };
+        let multiple_choice_activities = self.get_activities_by_type(ActivityType::MultipleChoice);
 
-        for activity in activities {
-            self.print_activity_answers(activity);
+        let short_answer_activities = self.get_activities_by_type(ActivityType::ShortAnswer);
+
+        if let Some(activities) = multiple_choice_activities {
+            println!("\nMultiple Choice:\n----------");
+            for activity in activities {
+                self.print_activity_answers(activity, ActivityType::MultipleChoice);
+                println!("");
+            }
+        }
+
+        if let Some(activities) = short_answer_activities {
+            println!("\nShort Answers:\n----------");
+            for activity in activities {
+                self.print_activity_answers(activity, ActivityType::ShortAnswer);
+                println!("");
+            }
         }
     }
 
-    fn get_multiple_choice_activities(&self) -> Option<Vec<&Value>> {
+    fn get_activities_by_type(&self, activity_type: ActivityType) -> Option<Vec<&Value>> {
         let content_resources = self.data.get("section")?.get("content_resources")?;
 
         let arr = content_resources.as_array()?;
 
-        Some(
-            arr.iter()
-                .filter(|obj| obj["type"] == "multiple_choice")
-                .collect(),
-        )
+        let activities: Vec<&Value> = arr
+            .iter()
+            .filter(|obj| obj["type"] == activity_type.as_string())
+            .collect();
+
+        if activities.len() > 0 {
+            return Some(activities);
+        } else {
+            return None;
+        }
     }
 
-    fn print_activity_answers(&self, activity: &Value) {
+    fn print_activity_answers(&self, activity: &Value, activity_type: ActivityType) {
         if let Some(caption) = activity.get("caption") {
             println!("{}", caption);
         }
@@ -73,7 +120,7 @@ impl QuestionParser {
         let questions = self.get_questions(activity);
 
         for question in questions {
-            if let Some(answer) = self.find_correct_answer(question) {
+            if let Some(answer) = self.find_correct_answer(question, &activity_type) {
                 println!("Answer: {}", answer);
             }
         }
@@ -88,12 +135,23 @@ impl QuestionParser {
             .unwrap_or_default()
     }
 
-    fn find_correct_answer<'a>(&self, question: &'a Value) -> Option<&'a Value> {
-        let choices = question.get("choices")?.as_array()?;
-
-        choices
-            .iter()
-            .find(|choice| choice["correct"] == true)
-            .and_then(|choice| choice.get("label"))
+    fn find_correct_answer<'a>(
+        &self,
+        question: &'a Value,
+        activity_type: &ActivityType,
+    ) -> Option<&'a Value> {
+        match activity_type {
+            ActivityType::MultipleChoice => {
+                let choices = question.get("choices")?.as_array()?;
+                return choices
+                    .iter()
+                    .find(|choice| choice["correct"] == true)
+                    .and_then(|choice| choice.get("label"));
+            }
+            ActivityType::ShortAnswer => {
+                return question.get("answers")?.as_array()?.first();
+            }
+            _ => return None,
+        }
     }
 }

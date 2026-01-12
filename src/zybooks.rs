@@ -10,6 +10,13 @@ pub fn get_zybooks_data(args: &cli::Cli) -> Result<Value, Box<dyn std::error::Er
         BASE_URL, args.zybook_code, args.chapter, args.section
     );
 
+    let token = match &args.login.auth_token {
+        Some(t) => t.to_owned(),
+        None => {
+            return Err("Username and Password authentication not implemented yet".into());
+        }
+    };
+
     let client = Client::new();
     if args.verbose {
         println!("Sending request to server: {}", url);
@@ -18,7 +25,7 @@ pub fn get_zybooks_data(args: &cli::Cli) -> Result<Value, Box<dyn std::error::Er
         .get(url)
         .header("Accept", "application/json")
         .header("Accept-Encoding", "gzip")
-        .header("Authorization", format!("Bearer {}", args.auth_token))
+        .header("Authorization", format!("Bearer {}", token))
         .header("Host", "zyserver.zybooks.com")
         /* // Imitate firefox if necessary (i.e. if your requests get blocked)
         .header(

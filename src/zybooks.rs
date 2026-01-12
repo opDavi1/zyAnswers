@@ -1,13 +1,63 @@
+// Part of zyAnswers by opDavi1 licensed under the GPL-3.0-or-later license
+
 use crate::cli;
 use reqwest::blocking::Client;
-use serde_json::Value;
+use serde_json::{Value, json};
+use std::error::Error;
 
-const BASE_URL: &str = "https://zyserver.zybooks.com/v1/zybook";
+const API_URL: &str = "https://zyserver.zybooks.com/v1";
 
-pub fn get_zybooks_data(args: &cli::Cli) -> Result<Value, Box<dyn std::error::Error>> {
+fn authenticate(args: &cli::Cli) -> Result<String, Box<dyn Error>> {
+    let url = format!("{}/signin", API_URL);
+    let body = json!({
+        "email": args.login.username,
+        "password": args.password,
+    });
+
+    let client = Client::new();
+    if args.verbose {
+        println!("Sending login request to zybooks...");
+    }
+    let response = client
+        .post(url)
+        .header("Accept", "application/json")
+        .header("Accept-Encoding", "gzip")
+        .json(&body)
+        .send()?;
+
+    if args.verbose {
+        println!("Status: {}", response.status());
+        println!("Response headers: {:#?}", response.headers());
+    }
+    let data: Value = response.json()?;
+    if data["success"] == false {
+        let message = data["error"].get("message").unwrap().as_str().unwrap();
+        return Err(format!("Sign in unsuccessful: {}", message).into());
+    }
+
+    if args.very_verbose {
+        println!("Response data: {:#?}", data);
+    }
+
+    let token = match data["session"].get("auth_token").and_then(|t| t.as_str()) {
+        Some(t) => t,
+        None => {
+            return Err("Could not parse auth token".into());
+        }
+    };
+
+    Ok(token.to_owned())
+}
+
+pub fn get_zybooks_data(args: &cli::Cli) -> Result<Value, Box<dyn Error>> {
+    let token: String = match &args.login.auth_token {
+        Some(t) => t.clone(),
+        None => authenticate(&args)?,
+    };
+
     let url: String = format!(
-        "{}/{}/chapter/{}/section/{}",
-        BASE_URL, args.zybook_code, args.chapter, args.section
+        "{}/zybook/{}/chapter/{}/section/{}",
+        API_URL, args.zybook_code, args.chapter, args.section
     );
 
     let client = Client::new();
@@ -18,8 +68,7 @@ pub fn get_zybooks_data(args: &cli::Cli) -> Result<Value, Box<dyn std::error::Er
         .get(url)
         .header("Accept", "application/json")
         .header("Accept-Encoding", "gzip")
-        .header("Authorization", format!("Bearer {}", args.auth_token))
-        .header("Host", "zyserver.zybooks.com")
+        .header("Authorization", format!("Bearer {}", token))
         /* // Imitate firefox if necessary (i.e. if your requests get blocked)
         .header(
             "User-Agent",

@@ -48,4 +48,4 @@ $ zyanswers --auth-token <your token> --chapter <chapter> --section <section> --
 
 
 ## Binaries
-I only provide pre-compiled binaries for GNU/Linux distributions because I want Windows users to get a taste of having to compile programs while other platforms get binaries for free. I might change my mind in the future if this program gets advanced enough
+I don't provide precompiled binaries because I'm too lazy to. It's really not hard to compile it yourself
